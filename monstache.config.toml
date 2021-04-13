@@ -1,0 +1,71 @@
+mongo-url = "mongodb://dbo-operator:operadoradmin@172.17.94.122:27017/dbdata?replicaSet=rs0"
+elasticsearch-urls = ["http://172.17.94.122:9200"]
+# use 10 go routines concurrently pushing documents to Elasticsearch
+elasticsearch-max-conns = 10
+#namespace-regex ="dbdata.^"
+#direct-read-namespaces = ["dbdata.economico"]
+change-stream-namespaces = ["dbdata.economico"]
+index-as-update = true
+elasticsearch-max-seconds = 5
+enable-http-server = true
+
+# compress requests to Elasticsearch
+gzip = true
+# generate indexing statistics
+stats = true
+# index statistics into Elasticsearch
+index-stats = true
+# propogate dropped collections in MongoDB as index deletes in Elasticsearch
+dropped-collections = true
+# propogate dropped databases in MongoDB as index deletes in Elasticsearch
+dropped-databases = true
+# do not start processing at the beginning of the MongoDB oplog
+# if you set the replay to true you may see version conflict messages
+# in the log if you had synced previously. This just means that you are replaying old docs which are already
+# in Elasticsearch with a newer version. Elasticsearch is preventing the old docs from overwriting new ones.
+replay = true
+# resume processing from a timestamp saved in a previous run
+resume = true
+# do not validate that progress timestamps have been saved
+resume-write-unsafe = false
+# override the name under which resume state is saved
+resume-name = "default"
+# use a custom resume strategy (tokens) instead of the default strategy (timestamps)
+# tokens work with MongoDB API 3.6+ while timestamps work only with MongoDB API 4.0+
+resume-strategy = 1
+# exclude documents whose namespace matches the following pattern
+# namespace-exclude-regex = '^mydb\.ignorecollection$'
+# turn on indexing of GridFS file content
+# index-files = true
+# turn on search result highlighting of GridFS content
+file-highlighting = true
+# index GridFS files inserted into the following collections
+# file-namespaces = ["users.fs.files"]
+# print detailed information including request traces
+verbose = true
+# enable clustering mode
+# cluster-name = 'apollo'
+# do not exit after full-sync, rather continue tailing the oplog
+exit-after-direct-reads = false
+
+[[mapping]]
+namespace = "dbdata.economico"
+index = "dataintelindex_economico"
+
+[[script]]
+namespace = "dbdata.economico"
+script = """
+module.exports = function(doc) {
+  var newdoc = {
+    periodo: doc.periodo,
+    entidadFederativa: doc.entidadFederativa,
+    municipio: doc.municipio,
+    sector: doc.sector,
+    hombres: doc.hombres,
+    mujeres: doc.mujeres,
+    date: doc.date,
+    location: doc.location
+  }
+  return newdoc;
+}
+"""
